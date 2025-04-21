@@ -522,27 +522,28 @@ const startServer = async () => {
       process.exit(1);
     }
     
-    // Criar usuário admin padrão se não existir
-    const adminExists = await User.findOne({ role: 'admin' });
-    
-    if (!adminExists) {
-      console.log('Criando usuário administrador padrão...');
-      
-      // Criar hash da senha
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash('admin123', salt);
-      
-      // Criar usuário administrador
-      const admin = new User({
-        name: 'Administrador',
-        email: 'admin@palavradodia.com',
-        password: hashedPassword,
-        role: 'admin'
-      });
-      
-      await admin.save();
-      console.log('Usuário administrador criado com sucesso!');
-    }
+   // Criar usuário admin padrão se não existir
+const adminExists = await User.findOne({ role: 'admin' });
+
+if (!adminExists) {
+  console.log('Criando usuário administrador padrão...');
+  
+  // Criar hash da senha
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash('admin123', salt);
+  
+  // Criar usuário administrador
+  const admin = new User({
+    name: 'Administrador',
+    email: 'admin@palavradodia.com',
+    password: hashedPassword,
+    role: 'admin'
+  });
+  
+  await admin.save();
+  console.log('Usuário administrador criado com sucesso!');
+}
+
     
     // Iniciar servidor
     app.listen(PORT, () => {
