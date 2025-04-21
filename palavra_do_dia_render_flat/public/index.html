@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Palavra do Dia - Painel Administrativo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #172d4d;
+            color: #daa520;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            margin: 0;
+        }
+        .content {
+            background-color: #fff;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .login-form {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #172d4d;
+            color: #daa520;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #0e1b2e;
+        }
+        .error-message {
+            color: #e74c3c;
+            margin-top: 15px;
+            display: none;
+        }
+        .dashboard {
+            display: none;
+        }
+        .nav {
+            background-color: #172d4d;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .nav a {
+            color: #daa520;
+            text-decoration: none;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Palavra do Dia - Painel Administrativo</h1>
+    </header>
+
+    <div class="container">
+        <!-- Login Form -->
+        <div id="login-section" class="content login-form">
+            <h2>Login</h2>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" placeholder="Seu email">
+            </div>
+            <div class="form-group">
+                <label for="password">Senha:</label>
+                <input type="password" id="password" placeholder="Sua senha">
+            </div>
+            <button id="login-button">Entrar</button>
+            <div id="login-error" class="error-message">Email ou senha incorretos.</div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard-section" class="dashboard">
+            <div class="nav">
+                <a href="#" id="nav-words">Palavras</a>
+                <a href="#" id="nav-logout">Sair</a>
+            </div>
+            
+            <div class="content">
+                <h2>Palavras</h2>
+                <button id="add-word-button">Adicionar Nova Palavra</button>
+                <div id="words-table-container">
+                    <table id="words-table">
+                        <thead>
+                            <tr>
+                                <th>Palavra</th>
+                                <th>Data de Publicação</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="words-list">
+                            <!-- Words will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const loginSection = document.getElementById('login-section');
+        const dashboardSection = document.getElementById('dashboard-section');
+        const loginButton = document.getElementById('login-button');
+        const loginError = document.getElementById('login-error');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const navLogout = document.getElementById('nav-logout');
+        const wordsList = document.getElementById('words-list');
+        const addWordButton = document.getElementById('add-word-button');
+
+        // Check if user is logged in
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                loginSection.style.display = 'none';
+                dashboardSection.style.display = 'block';
+                loadWords();
+            } else {
+                loginSection.style.display = 'block';
+                dashboardSection.style.display = 'none';
+            }
+        }
+
+        // Login function
+        loginButton.addEventListener('click', async () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    checkAuth();
+                } else {
+                    loginError.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Erro ao fazer login:', error);
+                loginError.style.display = 'block';
+            }
+        });
+
+        // Logout function
+        navLogout.addEventListener('click', () => {
+            localStorage.removeItem('token');
+            checkAuth();
+        });
+
+        // Load words
+        async function loadWords() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/words', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    wordsList.innerHTML = '';
+                    
+                    if (data.data.length === 0) {
+                        wordsList.innerHTML = '<tr><td colspan="4">Nenhuma palavra encontrada</td></tr>';
+                        return;
+                    }
+
+                    data.data.forEach(word => {
+                        const row = document.createElement('tr');
+                        
+                        const wordCell = document.createElement('td');
+                        wordCell.textContent = word.word.pt;
+                        
+                        const dateCell = document.createElement('td');
+                        dateCell.textContent = new Date(word.publishDate).toLocaleDateString();
+                        
+                        const statusCell = document.createElement('td');
+                        statusCell.textContent = word.status === 'draft' ? 'Rascunho' : 
+                                               word.status === 'scheduled' ? 'Agendada' : 'Publicada';
+                        
+                        const actionsCell = document.createElement('td');
+                        const editButton = document.createElement('button');
+                        editButton.textContent = 'Editar';
+                        editButton.addEventListener('click', () => {
+                            // Edit word functionality would go here
+                            alert('Funcionalidade de edição será implementada em breve');
+                        });
+                        
+                        actionsCell.appendChild(editButton);
+                        
+                        row.appendChild(wordCell);
+                        row.appendChild(dateCell);
+                        row.appendChild(statusCell);
+                        row.appendChild(actionsCell);
+                        
+                        wordsList.appendChild(row);
+                    });
+                } else {
+                    console.error('Erro ao carregar palavras:', data.message);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar palavras:', error);
+            }
+        }
+
+        // Add word button
+        addWordButton.addEventListener('click', () => {
+            // Add word functionality would go here
+            alert('Funcionalidade de adicionar palavra será implementada em breve');
+        });
+
+        // Check authentication on page load
+        checkAuth();
+    </script>
+</body>
+</html>
